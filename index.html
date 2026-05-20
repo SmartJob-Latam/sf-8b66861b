@@ -1,0 +1,1365 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>inv-app</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script>tailwind.config = { darkMode: 'class' }</script>
+  <style>
+    [data-drop] { display:none; position:absolute; z-index:50; }
+    [data-drop].open { display:block; }
+    .modal-bg { display:none; }
+    .modal-bg.open { display:flex; }
+    .group:hover .group-hover\:opacity-100 { opacity:1; }
+  </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white">
+
+<div class="flex h-screen overflow-hidden">
+  <!-- Sidebar -->
+  <aside class="w-60 shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
+    <div class="p-5 border-b border-gray-200 dark:border-gray-700">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shrink-0">
+          <i data-lucide="monitor-check" class="w-4 h-4 text-white"></i>
+        </div>
+        <div>
+          <h1 class="text-base font-bold leading-tight">inv-app</h1>
+          <p class="text-xs text-gray-500 dark:text-gray-400">Inventario TI</p>
+        </div>
+      </div>
+    </div>
+    <nav class="flex-1 px-3 py-3 overflow-y-auto" id="sidebar-nav"></nav>
+    <div class="p-4 border-t border-gray-200 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1.5">
+      <i data-lucide="shield-check" class="w-3 h-3"></i> v1.0 · Plataforma interna TI
+    </div>
+  </aside>
+
+  <!-- Main area -->
+  <div class="flex-1 flex flex-col overflow-hidden">
+    <header class="shrink-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-3">
+      <div class="flex items-center justify-end gap-2">
+        <button id="btn-theme" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400">
+          <i id="icon-theme" data-lucide="moon" class="w-4 h-4"></i>
+        </button>
+        <div class="relative">
+          <button id="btn-notif" class="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400">
+            <i data-lucide="bell" class="w-4 h-4"></i>
+            <span id="notif-dot" class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
+          </button>
+          <div id="drop-notif" data-drop class="right-0 top-11 w-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-4">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="font-semibold text-sm">Notificaciones</h3>
+              <button id="btn-notif-read" class="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">Marcar leídas</button>
+            </div>
+            <hr class="border-gray-200 dark:border-gray-700 mb-3">
+            <div id="notif-list" class="space-y-2 max-h-72 overflow-y-auto"></div>
+          </div>
+        </div>
+        <div class="relative">
+          <button id="btn-user" class="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+            <div id="hdr-avatar-wrap"></div>
+            <span id="hdr-name" class="text-sm font-medium"></span>
+          </button>
+          <div id="drop-user" data-drop class="right-0 top-11 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-4">
+            <div class="flex items-center gap-3 mb-3">
+              <div id="drop-avatar-wrap"></div>
+              <div>
+                <p id="drop-name" class="font-semibold text-sm"></p>
+                <p id="drop-email" class="text-xs text-gray-500 dark:text-gray-400"></p>
+                <p id="drop-role" class="text-xs text-blue-600 dark:text-blue-400 font-medium"></p>
+              </div>
+            </div>
+            <hr class="border-gray-200 dark:border-gray-700 mb-2">
+            <div class="space-y-0.5">
+              <button class="w-full flex items-center px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"><i data-lucide="user" class="w-4 h-4 mr-2"></i>Mi perfil</button>
+              <button class="w-full flex items-center px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"><i data-lucide="settings" class="w-4 h-4 mr-2"></i>Configuración</button>
+            </div>
+            <hr class="border-gray-200 dark:border-gray-700 my-2">
+            <button class="w-full flex items-center px-3 py-2 text-sm rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400"><i data-lucide="log-out" class="w-4 h-4 mr-2"></i>Cerrar sesión</button>
+          </div>
+        </div>
+      </div>
+    </header>
+    <main class="flex-1 overflow-auto bg-gray-50 dark:bg-gray-900" id="main"></main>
+  </div>
+</div>
+
+<!-- Modal -->
+<div id="modal-bg" class="modal-bg fixed inset-0 bg-black/50 z-50 items-center justify-center p-4">
+  <div id="modal-box" class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-4">
+      <h3 id="modal-title" class="text-lg font-semibold"></h3>
+      <button onclick="closeModal()" class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+// ─── STATIC DATA ──────────────────────────────────────────────────────────
+
+const currentUser = {
+  name: 'Carlos Mendoza',
+  email: 'carlos.mendoza@empresa.com',
+  role: 'Operador TI',
+};
+
+const notifications = [
+  { id:'n1', title:'Dispositivo asignado', message:'ThinkPad X1 Carbon asignado a Ana García', time:'hace 15 min', unread:true },
+  { id:'n2', title:'Garantía por vencer', message:'Dell Latitude 5540 vence en 28 días', time:'hace 2h', unread:true },
+  { id:'n3', title:'Dispositivo desasignado', message:'HP EliteBook 840 devuelto por Laura Jiménez', time:'hace 1 día', unread:false },
+  { id:'n4', title:'Nuevo dispositivo registrado', message:'Microsoft Surface Pro 9 añadido al inventario', time:'hace 3 días', unread:false },
+];
+
+const STATUS_CFG = {
+  disponible: { label:'Disponible',    cls:'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300' },
+  en_uso:     { label:'En uso',        cls:'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300' },
+  mantencion: { label:'En mantención', cls:'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300' },
+  baja:       { label:'Dado de baja',  cls:'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300' },
+};
+
+const DEPARTMENTS = ['Finanzas','Gerencia','Marketing','Operaciones','RRHH','TI','Ventas'];
+
+let catalogBrands = ['Apple','Asus','Dell','HP','LG','Lenovo','Logitech','Microsoft','Samsung'];
+let catalogTypes  = ['Desktop','Impresora','Laptop','Monitor','Mouse','Proyector','Servidor','Smartphone','Tablet','Teclado'];
+
+let devices = [
+  { id:'dev_1',  serial:'DL-LAT-001',  brand:'Dell',      model:'Latitude 5540',      type:'Laptop',     status:'en_uso',     purchaseDate:'2023-03-15', warrantyDate:'2026-03-15', notes:'' },
+  { id:'dev_2',  serial:'LN-TPX-002',  brand:'Lenovo',    model:'ThinkPad X1 Carbon', type:'Laptop',     status:'en_uso',     purchaseDate:'2023-06-01', warrantyDate:'2026-06-01', notes:'' },
+  { id:'dev_3',  serial:'AP-MBP-003',  brand:'Apple',     model:'MacBook Pro 14"',    type:'Laptop',     status:'disponible', purchaseDate:'2024-01-10', warrantyDate:'2027-01-10', notes:'' },
+  { id:'dev_4',  serial:'HP-ELB-004',  brand:'HP',        model:'EliteBook 840',      type:'Laptop',     status:'en_uso',     purchaseDate:'2022-11-20', warrantyDate:'2025-11-20', notes:'' },
+  { id:'dev_5',  serial:'DL-XPS-005',  brand:'Dell',      model:'XPS 15 9530',        type:'Laptop',     status:'mantencion', purchaseDate:'2022-08-05', warrantyDate:'2025-08-05', notes:'Línea vertical en pantalla' },
+  { id:'dev_6',  serial:'DL-OPT-006',  brand:'Dell',      model:'Optiplex 7090',      type:'Desktop',    status:'en_uso',     purchaseDate:'2023-01-20', warrantyDate:'2026-01-20', notes:'' },
+  { id:'dev_7',  serial:'HP-PBK-007',  brand:'HP',        model:'ProBook 450 G9',     type:'Laptop',     status:'disponible', purchaseDate:'2023-09-14', warrantyDate:'2026-09-14', notes:'' },
+  { id:'dev_8',  serial:'LN-MTC-008',  brand:'Lenovo',    model:'ThinkCentre M90n',   type:'Desktop',    status:'en_uso',     purchaseDate:'2022-05-10', warrantyDate:'2025-05-10', notes:'' },
+  { id:'dev_9',  serial:'LG-ULF-009',  brand:'LG',        model:'UltraFine 27"',      type:'Monitor',    status:'disponible', purchaseDate:'2023-04-22', warrantyDate:'2026-04-22', notes:'' },
+  { id:'dev_10', serial:'SM-ULW-010',  brand:'Samsung',   model:'UltraWide 34"',      type:'Monitor',    status:'en_uso',     purchaseDate:'2023-07-08', warrantyDate:'2026-07-08', notes:'' },
+  { id:'dev_11', serial:'LG-MXK-011',  brand:'Logitech',  model:'MX Keys',            type:'Teclado',    status:'disponible', purchaseDate:'2024-02-01', warrantyDate:'2027-02-01', notes:'' },
+  { id:'dev_12', serial:'AP-IP14-012', brand:'Apple',     model:'iPhone 14 Pro',      type:'Smartphone', status:'en_uso',     purchaseDate:'2023-10-05', warrantyDate:'2025-10-05', notes:'' },
+  { id:'dev_13', serial:'SM-GTS-013',  brand:'Samsung',   model:'Galaxy Tab S8',      type:'Tablet',     status:'baja',       purchaseDate:'2021-03-18', warrantyDate:'2024-03-18', notes:'Pantalla rota tras caída' },
+  { id:'dev_14', serial:'MS-SFP-014',  brand:'Microsoft', model:'Surface Pro 9',      type:'Laptop',     status:'disponible', purchaseDate:'2024-03-01', warrantyDate:'2027-03-01', notes:'' },
+  { id:'dev_15', serial:'HP-ZBK-015',  brand:'HP',        model:'ZBook Studio G9',    type:'Laptop',     status:'en_uso',     purchaseDate:'2023-12-10', warrantyDate:'2026-12-10', notes:'' },
+  { id:'dev_16', serial:'LG-MXM-016',  brand:'Logitech',  model:'MX Master 3',        type:'Mouse',      status:'disponible', purchaseDate:'2024-01-15', warrantyDate:'2027-01-15', notes:'' },
+];
+
+let colaboradores = [
+  { id:'col_1',  nombre:'Ana',       apellido:'García',  email:'ana.garcia@empresa.com',        departamento:'Gerencia',    cargo:'Gerente General' },
+  { id:'col_2',  nombre:'Carlos',    apellido:'Mendoza', email:'carlos.mendoza@empresa.com',    departamento:'TI',          cargo:'Operador TI' },
+  { id:'col_3',  nombre:'María',     apellido:'Torres',  email:'maria.torres@empresa.com',      departamento:'RRHH',        cargo:'Jefa de RRHH' },
+  { id:'col_4',  nombre:'Roberto',   apellido:'Silva',   email:'roberto.silva@empresa.com',     departamento:'Finanzas',    cargo:'Analista Financiero' },
+  { id:'col_5',  nombre:'Laura',     apellido:'Jiménez', email:'laura.jimenez@empresa.com',     departamento:'Ventas',      cargo:'Ejecutiva de Ventas' },
+  { id:'col_6',  nombre:'Diego',     apellido:'Ramírez', email:'diego.ramirez@empresa.com',     departamento:'TI',          cargo:'Analista TI' },
+  { id:'col_7',  nombre:'Sofía',     apellido:'Pérez',   email:'sofia.perez@empresa.com',       departamento:'Marketing',   cargo:'Diseñadora Gráfica' },
+  { id:'col_8',  nombre:'Andrés',    apellido:'López',   email:'andres.lopez@empresa.com',      departamento:'Operaciones', cargo:'Coordinador Operaciones' },
+  { id:'col_9',  nombre:'Valentina', apellido:'Morales', email:'valentina.morales@empresa.com', departamento:'Gerencia',    cargo:'Subgerente' },
+  { id:'col_10', nombre:'Felipe',    apellido:'Castro',  email:'felipe.castro@empresa.com',     departamento:'Finanzas',    cargo:'Contador' },
+  { id:'col_11', nombre:'Camila',    apellido:'Herrera', email:'camila.herrera@empresa.com',    departamento:'Ventas',      cargo:'Ejecutiva de Ventas' },
+  { id:'col_12', nombre:'Sebastián', apellido:'Muñoz',   email:'sebastian.munoz@empresa.com',   departamento:'TI',          cargo:'Administrador de Sistemas' },
+];
+
+// historial is the single source of truth; fechaTermino===null means active
+let historial = [
+  { id:'h_1',  deviceId:'dev_1',  colaboradorId:'col_6',  fechaInicio:'2024-01-08', fechaTermino:null,       motivoTermino:null,                           notas:'Equipo principal de trabajo',        registradoPor:'Carlos Mendoza' },
+  { id:'h_2',  deviceId:'dev_2',  colaboradorId:'col_1',  fechaInicio:'2024-02-14', fechaTermino:null,       motivoTermino:null,                           notas:'',                                   registradoPor:'Carlos Mendoza' },
+  { id:'h_3',  deviceId:'dev_4',  colaboradorId:'col_9',  fechaInicio:'2024-03-01', fechaTermino:null,       motivoTermino:null,                           notas:'Reemplazo de equipo anterior',       registradoPor:'Carlos Mendoza' },
+  { id:'h_4',  deviceId:'dev_6',  colaboradorId:'col_12', fechaInicio:'2023-06-20', fechaTermino:null,       motivoTermino:null,                           notas:'Escritorio sala de servidores',      registradoPor:'Carlos Mendoza' },
+  { id:'h_5',  deviceId:'dev_8',  colaboradorId:'col_4',  fechaInicio:'2023-08-15', fechaTermino:null,       motivoTermino:null,                           notas:'',                                   registradoPor:'Carlos Mendoza' },
+  { id:'h_6',  deviceId:'dev_10', colaboradorId:'col_7',  fechaInicio:'2024-04-10', fechaTermino:null,       motivoTermino:null,                           notas:'Monitor adicional para diseño',      registradoPor:'Carlos Mendoza' },
+  { id:'h_7',  deviceId:'dev_12', colaboradorId:'col_2',  fechaInicio:'2024-01-15', fechaTermino:null,       motivoTermino:null,                           notas:'Celular corporativo',                registradoPor:'Carlos Mendoza' },
+  { id:'h_8',  deviceId:'dev_15', colaboradorId:'col_3',  fechaInicio:'2024-05-02', fechaTermino:null,       motivoTermino:null,                           notas:'',                                   registradoPor:'Carlos Mendoza' },
+  { id:'h_9',  deviceId:'dev_1',  colaboradorId:'col_5',  fechaInicio:'2022-09-01', fechaTermino:'2024-01-07', motivoTermino:'Desvinculación del colaborador', notas:'',                              registradoPor:'Carlos Mendoza' },
+  { id:'h_10', deviceId:'dev_4',  colaboradorId:'col_5',  fechaInicio:'2022-07-15', fechaTermino:'2024-02-28', motivoTermino:'Cambio de equipo',           notas:'',                                   registradoPor:'Carlos Mendoza' },
+  { id:'h_11', deviceId:'dev_13', colaboradorId:'col_10', fechaInicio:'2021-09-01', fechaTermino:'2024-03-18', motivoTermino:'Equipo dado de baja por daño', notas:'Pantalla rota en caída',           registradoPor:'Carlos Mendoza' },
+  { id:'h_12', deviceId:'dev_2',  colaboradorId:'col_8',  fechaInicio:'2023-01-10', fechaTermino:'2024-02-13', motivoTermino:'Redistribución de equipos',  notas:'',                                   registradoPor:'Carlos Mendoza' },
+  { id:'h_13', deviceId:'dev_5',  colaboradorId:'col_11', fechaInicio:'2022-10-01', fechaTermino:'2025-01-15', motivoTermino:'Equipo enviado a mantención', notas:'Falla en pantalla detectada',       registradoPor:'Carlos Mendoza' },
+];
+
+// ─── STATE ────────────────────────────────────────────────────────────────
+
+const S = {
+  page: 'dashboard',
+  dark: false,
+  deviceQ: '', deviceStatusFilter: 'all', deviceTypeFilter: 'all',
+  colaboradorQ: '',
+  histDeviceQ: '', histColabQ: '',
+  catalogTab: 'marcas',
+};
+
+const NAV = [
+  { id:'dashboard',    label:'Dashboard',     icon:'layout-dashboard' },
+  { id:'dispositivos', label:'Dispositivos',  icon:'monitor' },
+  { id:'asignaciones', label:'Asignaciones',  icon:'link' },
+  { id:'historial',    label:'Historial',     icon:'history' },
+  { id:'colaboradores',label:'Colaboradores', icon:'users' },
+  { id:'catalogos',    label:'Catálogos',     icon:'tag' },
+];
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────
+
+function icons() { lucide.createIcons(); }
+function getDevice(id) { return devices.find(d => d.id === id); }
+function getColab(id)  { return colaboradores.find(c => c.id === id); }
+function colabFullName(id) { const c = getColab(id); return c ? `${c.nombre} ${c.apellido}` : '—'; }
+
+function statusBadge(status) {
+  const cfg = STATUS_CFG[status] || { label: status, cls: 'bg-gray-100 text-gray-700' };
+  return `<span class="px-2 py-0.5 rounded-full text-xs font-medium ${cfg.cls}">${cfg.label}</span>`;
+}
+
+function avatarDiv(name, sz='w-8 h-8', tx='text-xs') {
+  const cols = ['bg-blue-500','bg-violet-500','bg-green-600','bg-orange-500','bg-rose-500','bg-teal-500','bg-amber-500','bg-sky-500'];
+  const c = cols[(name.charCodeAt(0) + (name.charCodeAt(1)||0)) % cols.length];
+  const ini = name.split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
+  return `<div class="${sz} ${c} rounded-full flex items-center justify-center text-white font-semibold ${tx} shrink-0">${ini}</div>`;
+}
+
+function today() { return new Date().toISOString().split('T')[0]; }
+function uid(p)  { return `${p}_${Date.now()}_${Math.random().toString(36).slice(2,6)}`; }
+
+function daysBetween(dateStr) {
+  return Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000);
+}
+
+function inputCls() {
+  return 'w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500';
+}
+
+// ─── LAYOUT ───────────────────────────────────────────────────────────────
+
+function renderSidebar() {
+  const el = document.getElementById('sidebar-nav');
+  el.innerHTML = NAV.map(n => {
+    const act = S.page === n.id;
+    const cls = act
+      ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-semibold'
+      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700';
+    return `<button data-nav="${n.id}" class="w-full flex items-center px-3 py-2 mb-0.5 text-sm rounded-lg transition-colors ${cls}">
+      <i data-lucide="${n.icon}" class="w-4 h-4 mr-3 shrink-0"></i>${n.label}
+    </button>`;
+  }).join('');
+  icons();
+}
+
+function renderHeader() {
+  const u = currentUser;
+  document.getElementById('hdr-avatar-wrap').innerHTML = avatarDiv(u.name, 'w-8 h-8', 'text-xs');
+  document.getElementById('hdr-name').textContent = u.name;
+  document.getElementById('drop-avatar-wrap').innerHTML = avatarDiv(u.name, 'w-11 h-11', 'text-sm');
+  document.getElementById('drop-name').textContent = u.name;
+  document.getElementById('drop-email').textContent = u.email;
+  document.getElementById('drop-role').textContent = u.role;
+  renderNotifications();
+}
+
+function renderNotifications() {
+  const list = document.getElementById('notif-list');
+  list.innerHTML = notifications.map(n => `
+    <div class="p-3 rounded-lg ${n.unread ? 'bg-blue-50 dark:bg-blue-900/20' : 'bg-gray-50 dark:bg-gray-700/50'}">
+      <div class="flex items-start gap-2">
+        <div class="flex-1">
+          <p class="text-xs font-semibold">${n.title}</p>
+          <p class="text-xs text-gray-600 dark:text-gray-300 mt-0.5">${n.message}</p>
+          <p class="text-xs text-gray-400 mt-1">${n.time}</p>
+        </div>
+        ${n.unread ? '<div class="w-2 h-2 bg-blue-500 rounded-full mt-1 shrink-0"></div>' : ''}
+      </div>
+    </div>`).join('');
+  document.getElementById('notif-dot').style.display = notifications.some(n=>n.unread) ? 'block' : 'none';
+  icons();
+}
+
+// ─── NAVIGATION ───────────────────────────────────────────────────────────
+
+function go(page) {
+  S.page = page;
+  closeDrops();
+  renderSidebar();
+  renderPage();
+}
+
+function renderPage() {
+  const main = document.getElementById('main');
+  switch (S.page) {
+    case 'dashboard':    main.innerHTML = dashboardHTML();    afterDashboard();    break;
+    case 'dispositivos': main.innerHTML = dispositivosHTML(); afterDispositivos(); break;
+    case 'asignaciones': main.innerHTML = asignacionesHTML(); afterAsignaciones(); break;
+    case 'historial':    main.innerHTML = historialHTML();    afterHistorial();    break;
+    case 'colaboradores':main.innerHTML = colaboradoresHTML();afterColaboradores();break;
+    case 'catalogos':    main.innerHTML = catalogosHTML();    afterCatalogos();    break;
+  }
+  icons();
+}
+
+// ─── MODAL ────────────────────────────────────────────────────────────────
+
+function modal(title, bodyHtml, wide=false) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').innerHTML = bodyHtml;
+  document.getElementById('modal-box').className =
+    `bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 w-full ${wide?'max-w-2xl':'max-w-lg'} max-h-[90vh] overflow-y-auto`;
+  document.getElementById('modal-bg').classList.add('open');
+  icons();
+}
+function closeModal() { document.getElementById('modal-bg').classList.remove('open'); }
+
+// ─── DROPDOWNS ────────────────────────────────────────────────────────────
+
+function toggleDrop(e, id) {
+  if (e && e.stopPropagation) e.stopPropagation();
+  const el = document.getElementById(id);
+  const was = el.classList.contains('open');
+  closeDrops();
+  if (!was) el.classList.add('open');
+}
+function closeDrops() { document.querySelectorAll('[data-drop]').forEach(el => el.classList.remove('open')); }
+
+function toggleTheme() {
+  S.dark = !S.dark;
+  document.documentElement.classList.toggle('dark', S.dark);
+  document.getElementById('icon-theme').setAttribute('data-lucide', S.dark ? 'sun' : 'moon');
+  icons();
+}
+
+// ─── PAGE: DASHBOARD ──────────────────────────────────────────────────────
+
+function dashboardHTML() {
+  const total = devices.length;
+  const byStatus = {};
+  Object.keys(STATUS_CFG).forEach(k => byStatus[k] = devices.filter(d=>d.status===k).length);
+  const activeCount = historial.filter(h=>!h.fechaTermino).length;
+  const recent = [...historial].sort((a,b)=>b.fechaInicio.localeCompare(a.fechaInicio)).slice(0,6);
+
+  return `<div class="p-6">
+    <div class="max-w-6xl mx-auto">
+      <div class="mb-6">
+        <h1 class="text-2xl font-bold">Dashboard</h1>
+        <p class="text-sm text-gray-500 dark:text-gray-400">Visión ejecutiva del inventario TI</p>
+      </div>
+
+      <!-- KPI row -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        ${[
+          { label:'Total activos', val:total, icon:'monitor', color:'blue', sub:'dispositivos registrados' },
+          { label:'Disponibles',   val:byStatus.disponible, icon:'check-circle', color:'green', sub:'listos para asignar' },
+          { label:'En uso',        val:byStatus.en_uso,     icon:'user-check',   color:'blue',  sub:'asignados actualmente' },
+          { label:'En mantención', val:byStatus.mantencion, icon:'wrench',       color:'yellow', sub:'en servicio técnico' },
+        ].map(k => `
+          <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5">
+            <div class="flex items-center justify-between mb-3">
+              <p class="text-sm text-gray-500 dark:text-gray-400">${k.label}</p>
+              <div class="w-8 h-8 bg-${k.color}-100 dark:bg-${k.color}-900/30 rounded-lg flex items-center justify-center">
+                <i data-lucide="${k.icon}" class="w-4 h-4 text-${k.color}-600 dark:text-${k.color}-400"></i>
+              </div>
+            </div>
+            <p class="text-3xl font-bold">${k.val}</p>
+            <p class="text-xs text-gray-400 mt-1">${k.sub}</p>
+          </div>`).join('')}
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <!-- Donut chart -->
+        <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
+          <h3 class="font-semibold flex items-center mb-4 text-sm">
+            <i data-lucide="pie-chart" class="w-4 h-4 mr-2 text-gray-400"></i>Distribución por estado
+          </h3>
+          <canvas id="statusChart" height="180"></canvas>
+          <div class="mt-4 space-y-1.5">
+            ${Object.entries(STATUS_CFG).map(([k,v]) => `
+              <div class="flex items-center justify-between text-sm">
+                <div class="flex items-center gap-2">
+                  <div class="w-2.5 h-2.5 rounded-full ${k==='disponible'?'bg-green-500':k==='en_uso'?'bg-blue-500':k==='mantencion'?'bg-yellow-500':'bg-red-500'}"></div>
+                  <span class="text-gray-600 dark:text-gray-400 text-xs">${v.label}</span>
+                </div>
+                <span class="font-semibold text-sm">${byStatus[k]}</span>
+              </div>`).join('')}
+          </div>
+        </div>
+
+        <!-- Bar chart by type -->
+        <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
+          <h3 class="font-semibold flex items-center mb-4 text-sm">
+            <i data-lucide="bar-chart-3" class="w-4 h-4 mr-2 text-gray-400"></i>Equipos por tipo
+          </h3>
+          <canvas id="typeChart" height="180"></canvas>
+        </div>
+
+        <!-- Recent activity -->
+        <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
+          <h3 class="font-semibold flex items-center mb-4 text-sm">
+            <i data-lucide="activity" class="w-4 h-4 mr-2 text-gray-400"></i>Actividad reciente
+          </h3>
+          <div class="space-y-3">
+            ${recent.map(h => {
+              const dev = getDevice(h.deviceId);
+              const col = getColab(h.colaboradorId);
+              const isActive = !h.fechaTermino;
+              return `<div class="flex items-start gap-3">
+                <div class="w-2 h-2 rounded-full mt-1.5 shrink-0 ${isActive ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}"></div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-xs font-medium truncate">${dev ? dev.brand+' '+dev.model : '—'}</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 truncate">${col ? col.nombre+' '+col.apellido : '—'}</p>
+                  <p class="text-xs text-gray-400">${h.fechaInicio}${isActive ? ' · activo' : ' → '+h.fechaTermino}</p>
+                </div>
+              </div>`;
+            }).join('')}
+          </div>
+          <button onclick="go('historial')" class="mt-4 text-xs text-blue-600 dark:text-blue-400 hover:underline">Ver historial completo →</button>
+        </div>
+      </div>
+
+      <!-- Active assignments summary -->
+      <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-semibold flex items-center text-sm">
+            <i data-lucide="link" class="w-4 h-4 mr-2 text-gray-400"></i>Asignaciones activas
+            <span class="ml-2 px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs rounded-full font-normal">${activeCount}</span>
+          </h3>
+          <button onclick="go('asignaciones')" class="text-xs text-blue-600 dark:text-blue-400 hover:underline">Gestionar →</button>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          ${historial.filter(h=>!h.fechaTermino).slice(0,8).map(h => {
+            const col = getColab(h.colaboradorId);
+            const dev = getDevice(h.deviceId);
+            if (!col || !dev) return '';
+            return `<div class="flex items-center gap-2.5 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+              ${avatarDiv(col.nombre+' '+col.apellido, 'w-8 h-8', 'text-xs')}
+              <div class="min-w-0">
+                <p class="text-xs font-medium truncate">${col.nombre} ${col.apellido}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 truncate">${dev.model}</p>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function afterDashboard() {
+  const byStatus = {};
+  Object.keys(STATUS_CFG).forEach(k => byStatus[k] = devices.filter(d=>d.status===k).length);
+
+  const ctx1 = document.getElementById('statusChart');
+  if (ctx1 && typeof Chart !== 'undefined') {
+    new Chart(ctx1, {
+      type: 'doughnut',
+      data: {
+        labels: Object.values(STATUS_CFG).map(v=>v.label),
+        datasets: [{ data: Object.keys(STATUS_CFG).map(k=>byStatus[k]),
+          backgroundColor: ['#22c55e','#3b82f6','#eab308','#ef4444'], borderWidth:0 }]
+      },
+      options: { responsive:true, plugins:{ legend:{ display:false } }, cutout:'65%' }
+    });
+  }
+
+  const ctx2 = document.getElementById('typeChart');
+  if (ctx2 && typeof Chart !== 'undefined') {
+    const byType = {};
+    catalogTypes.forEach(t => byType[t] = devices.filter(d=>d.type===t).length);
+    const sorted = Object.entries(byType).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+    const isDark = S.dark;
+    const gridColor = isDark ? '#374151' : '#f3f4f6';
+    const tickColor = isDark ? '#9ca3af' : '#6b7280';
+    new Chart(ctx2, {
+      type: 'bar',
+      data: {
+        labels: sorted.map(([k])=>k),
+        datasets: [{ data: sorted.map(([,v])=>v), backgroundColor:'#3b82f6', borderRadius:4 }]
+      },
+      options: {
+        responsive:true, indexAxis:'y',
+        plugins:{ legend:{ display:false } },
+        scales: {
+          x: { ticks:{ color:tickColor, stepSize:1 }, grid:{ color:gridColor } },
+          y: { ticks:{ color:tickColor, font:{ size:11 } }, grid:{ display:false } }
+        }
+      }
+    });
+  }
+}
+
+// ─── PAGE: DISPOSITIVOS ───────────────────────────────────────────────────
+
+function dispositivosHTML() {
+  let list = devices.filter(d => {
+    const q = S.deviceQ.toLowerCase();
+    const matchQ = !q || (d.serial+d.brand+d.model+d.type).toLowerCase().includes(q);
+    const matchS = S.deviceStatusFilter === 'all' || d.status === S.deviceStatusFilter;
+    const matchT = S.deviceTypeFilter === 'all' || d.type === S.deviceTypeFilter;
+    return matchQ && matchS && matchT;
+  });
+
+  const usedTypes = catalogTypes.filter(t => devices.some(d=>d.type===t));
+
+  return `<div class="p-6">
+    <div class="max-w-7xl mx-auto">
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h1 class="text-2xl font-bold">Dispositivos</h1>
+          <p class="text-sm text-gray-500 dark:text-gray-400">${devices.length} equipos registrados en el inventario</p>
+        </div>
+        <button onclick="openAddDevice()" class="flex items-center px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 gap-1.5">
+          <i data-lucide="plus" class="w-4 h-4"></i>Nuevo dispositivo
+        </button>
+      </div>
+
+      <div class="flex flex-wrap gap-3 mb-4">
+        <div class="relative flex-1 min-w-56">
+          <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"></i>
+          <input id="dev-search" type="text" placeholder="Buscar serial, marca, modelo…" value="${S.deviceQ}"
+            class="w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div class="relative">
+          <button onclick="toggleDrop(event,'drop-dstatus')" class="flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
+            <i data-lucide="filter" class="w-4 h-4 text-gray-400"></i>
+            ${S.deviceStatusFilter==='all' ? 'Estado' : STATUS_CFG[S.deviceStatusFilter].label}
+            <i data-lucide="chevron-down" class="w-3 h-3 text-gray-400"></i>
+          </button>
+          <div id="drop-dstatus" data-drop class="left-0 top-11 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1 min-w-44">
+            <button onclick="S.deviceStatusFilter='all'; closeDrops(); renderPage()" class="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700">Todos los estados</button>
+            ${Object.entries(STATUS_CFG).map(([k,v])=>`
+              <button onclick="S.deviceStatusFilter='${k}'; closeDrops(); renderPage()" class="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700">${v.label}</button>`).join('')}
+          </div>
+        </div>
+        <div class="relative">
+          <button onclick="toggleDrop(event,'drop-dtype')" class="flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
+            <i data-lucide="cpu" class="w-4 h-4 text-gray-400"></i>
+            ${S.deviceTypeFilter==='all' ? 'Tipo' : S.deviceTypeFilter}
+            <i data-lucide="chevron-down" class="w-3 h-3 text-gray-400"></i>
+          </button>
+          <div id="drop-dtype" data-drop class="left-0 top-11 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1 min-w-40">
+            <button onclick="S.deviceTypeFilter='all'; closeDrops(); renderPage()" class="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700">Todos los tipos</button>
+            ${usedTypes.map(t=>`
+              <button onclick="S.deviceTypeFilter='${t}'; closeDrops(); renderPage()" class="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700">${t}</button>`).join('')}
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
+              <tr>
+                <th class="text-left px-4 py-3 font-medium text-gray-500 dark:text-gray-400 text-xs">Serial</th>
+                <th class="text-left px-4 py-3 font-medium text-gray-500 dark:text-gray-400 text-xs">Marca / Modelo</th>
+                <th class="text-left px-4 py-3 font-medium text-gray-500 dark:text-gray-400 text-xs">Tipo</th>
+                <th class="text-left px-4 py-3 font-medium text-gray-500 dark:text-gray-400 text-xs">Estado</th>
+                <th class="text-left px-4 py-3 font-medium text-gray-500 dark:text-gray-400 text-xs">Asignado a</th>
+                <th class="text-left px-4 py-3 font-medium text-gray-500 dark:text-gray-400 text-xs">F. Compra</th>
+                <th class="px-4 py-3 text-xs"></th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+              ${list.length === 0
+                ? `<tr><td colspan="7" class="px-4 py-16 text-center text-gray-500 dark:text-gray-400">
+                    <i data-lucide="monitor-x" class="w-10 h-10 mx-auto mb-3 opacity-30"></i>
+                    <p class="font-medium">Sin resultados</p>
+                    <p class="text-xs mt-1">Ajusta los filtros de búsqueda</p>
+                  </td></tr>`
+                : list.map(d => {
+                  const activeH = historial.find(h=>h.deviceId===d.id && !h.fechaTermino);
+                  const assignee = activeH ? colabFullName(activeH.colaboradorId) : '—';
+                  return `<tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30">
+                    <td class="px-4 py-3 font-mono text-xs text-gray-400">${d.serial}</td>
+                    <td class="px-4 py-3">
+                      <p class="font-medium">${d.brand}</p>
+                      <p class="text-xs text-gray-500 dark:text-gray-400">${d.model}</p>
+                    </td>
+                    <td class="px-4 py-3 text-gray-600 dark:text-gray-400">${d.type}</td>
+                    <td class="px-4 py-3">${statusBadge(d.status)}</td>
+                    <td class="px-4 py-3 text-gray-600 dark:text-gray-400">${assignee}</td>
+                    <td class="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs">${d.purchaseDate}</td>
+                    <td class="px-4 py-3">
+                      <div class="flex items-center gap-1 justify-end flex-wrap">
+                        ${d.status==='disponible' ? `<button onclick="openAssignDevice('${d.id}')" class="px-2.5 py-1 text-xs text-blue-600 dark:text-blue-400 border border-blue-300 dark:border-blue-700 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20">Asignar</button>` : ''}
+                        ${d.status==='en_uso'     ? `<button onclick="openUnassignDevice('${d.id}')" class="px-2.5 py-1 text-xs text-orange-600 dark:text-orange-400 border border-orange-300 dark:border-orange-700 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-900/20">Desasignar</button>` : ''}
+                        <button onclick="openEditDevice('${d.id}')" class="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg" title="Editar">
+                          <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                        </button>
+                        <button onclick="openDeviceHistory('${d.id}')" class="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg" title="Historial">
+                          <i data-lucide="history" class="w-3.5 h-3.5"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>`;
+                }).join('')}
+            </tbody>
+          </table>
+        </div>
+        <div class="px-4 py-3 border-t border-gray-100 dark:border-gray-700 text-xs text-gray-400 flex items-center justify-between">
+          <span>Mostrando ${list.length} de ${devices.length} dispositivos</span>
+          ${S.deviceStatusFilter!=='all'||S.deviceTypeFilter!=='all'||S.deviceQ
+            ? `<button onclick="S.deviceQ='';S.deviceStatusFilter='all';S.deviceTypeFilter='all';renderPage()" class="text-blue-600 dark:text-blue-400 hover:underline">Limpiar filtros</button>` : ''}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function afterDispositivos() {
+  const el = document.getElementById('dev-search');
+  if (el) {
+    if (S.deviceQ) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
+    el.addEventListener('input', e => { S.deviceQ = e.target.value; renderPage(); });
+  }
+}
+
+// Device form helpers
+function deviceFormHTML(d={}) {
+  const brandOpts = catalogBrands.map(b=>`<option value="${b}" ${d.brand===b?'selected':''}>${b}</option>`).join('');
+  const typeOpts  = catalogTypes.map(t=>`<option value="${t}" ${d.type===t?'selected':''}>${t}</option>`).join('');
+  const stOpts = Object.entries(STATUS_CFG).map(([k,v])=>`<option value="${k}" ${(d.status||'disponible')===k?'selected':''}>${v.label}</option>`).join('');
+  return `<div class="grid grid-cols-2 gap-4">
+    <div class="col-span-2">
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Número de serie *</label>
+      <input id="m-serial" type="text" value="${d.serial||''}" placeholder="Ej: DL-LAT-017" class="${inputCls()}">
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Marca *</label>
+      <select id="m-brand" class="${inputCls()}"><option value="">Seleccionar…</option>${brandOpts}</select>
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Modelo *</label>
+      <input id="m-model" type="text" value="${d.model||''}" placeholder="Ej: Latitude 5540" class="${inputCls()}">
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tipo *</label>
+      <select id="m-type" class="${inputCls()}"><option value="">Seleccionar…</option>${typeOpts}</select>
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Estado</label>
+      <select id="m-status" class="${inputCls()}">${stOpts}</select>
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha de compra</label>
+      <input id="m-purchase" type="date" value="${d.purchaseDate||''}" class="${inputCls()}">
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fin de garantía</label>
+      <input id="m-warranty" type="date" value="${d.warrantyDate||''}" class="${inputCls()}">
+    </div>
+    <div class="col-span-2">
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notas</label>
+      <textarea id="m-notes" rows="2" class="${inputCls()} resize-none">${d.notes||''}</textarea>
+    </div>
+  </div>`;
+}
+
+function modalBtns(saveFn, saveLabel='Guardar', saveCls='bg-blue-600 hover:bg-blue-700') {
+  return `<div class="flex justify-end gap-2 pt-4">
+    <button onclick="closeModal()" class="px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">Cancelar</button>
+    <button onclick="${saveFn}" class="px-4 py-2 text-sm ${saveCls} text-white rounded-lg">${saveLabel}</button>
+  </div>`;
+}
+
+function openAddDevice() {
+  modal('Registrar dispositivo', `<div class="space-y-4">${deviceFormHTML()}${modalBtns('saveNewDevice()','Registrar')}</div>`, true);
+}
+
+function saveNewDevice() {
+  const serial  = document.getElementById('m-serial').value.trim();
+  const brand   = document.getElementById('m-brand').value;
+  const model   = document.getElementById('m-model').value.trim();
+  const type    = document.getElementById('m-type').value;
+  if (!serial||!brand||!model||!type) { alert('Completa los campos obligatorios (*)'); return; }
+  if (devices.find(d=>d.serial===serial)) { alert('El número de serie ya está registrado.'); return; }
+  devices.push({
+    id: uid('dev'), serial, brand, model, type,
+    status: document.getElementById('m-status').value || 'disponible',
+    purchaseDate: document.getElementById('m-purchase').value || today(),
+    warrantyDate: document.getElementById('m-warranty').value || '',
+    notes: document.getElementById('m-notes').value.trim(),
+  });
+  closeModal(); renderPage();
+}
+
+function openEditDevice(devId) {
+  const d = getDevice(devId); if (!d) return;
+  modal(`Editar · ${d.serial}`, `<div class="space-y-4">${deviceFormHTML(d)}${modalBtns(`saveEditDevice('${devId}')`)}</div>`, true);
+}
+
+function saveEditDevice(devId) {
+  const d = getDevice(devId); if (!d) return;
+  const serial = document.getElementById('m-serial').value.trim();
+  const brand  = document.getElementById('m-brand').value;
+  const model  = document.getElementById('m-model').value.trim();
+  const type   = document.getElementById('m-type').value;
+  if (!serial||!brand||!model||!type) { alert('Completa los campos obligatorios (*)'); return; }
+  if (devices.find(x=>x.serial===serial&&x.id!==devId)) { alert('El número de serie ya está en uso.'); return; }
+  Object.assign(d, { serial, brand, model, type,
+    status: document.getElementById('m-status').value,
+    purchaseDate: document.getElementById('m-purchase').value,
+    warrantyDate: document.getElementById('m-warranty').value,
+    notes: document.getElementById('m-notes').value.trim(),
+  });
+  closeModal(); renderPage();
+}
+
+function openDeviceHistory(devId) {
+  const d = getDevice(devId);
+  const recs = [...historial].filter(h=>h.deviceId===devId).sort((a,b)=>b.fechaInicio.localeCompare(a.fechaInicio));
+  modal(`Historial · ${d?d.model:devId}`, `
+    <div class="space-y-3">
+      ${recs.length===0 ? '<p class="text-sm text-center text-gray-400 py-6">Sin historial de asignaciones</p>'
+        : recs.map(h => {
+          const col = getColab(h.colaboradorId);
+          const act = !h.fechaTermino;
+          return `<div class="p-3 rounded-lg border ${act?'border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20':'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/30'}">
+            <div class="flex items-center gap-2 mb-1">
+              ${avatarDiv(col?col.nombre+' '+col.apellido:'?','w-6 h-6','text-xs')}
+              <span class="text-sm font-medium">${col?col.nombre+' '+col.apellido:'—'}</span>
+              ${act?'<span class="ml-auto text-xs text-blue-600 dark:text-blue-400 font-medium">Activo</span>':''}
+            </div>
+            <p class="text-xs text-gray-500 dark:text-gray-400">Desde: ${h.fechaInicio}${h.fechaTermino?' · Hasta: '+h.fechaTermino:''}</p>
+            ${h.motivoTermino?`<p class="text-xs text-gray-500 mt-0.5">Motivo: ${h.motivoTermino}</p>`:''}
+            ${h.notas?`<p class="text-xs text-gray-400 italic mt-0.5">${h.notas}</p>`:''}
+          </div>`;
+        }).join('')}
+      <div class="flex justify-end pt-2">
+        <button onclick="closeModal()" class="px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">Cerrar</button>
+      </div>
+    </div>`);
+}
+
+// ─── ASSIGN / UNASSIGN ────────────────────────────────────────────────────
+
+function openAssignDevice(devId) {
+  const d = getDevice(devId);
+  if (!d || d.status !== 'disponible') { alert('El dispositivo no está disponible.'); return; }
+  const colOpts = colaboradores.map(c=>`<option value="${c.id}">${c.nombre} ${c.apellido} · ${c.departamento}</option>`).join('');
+  modal(`Asignar · ${d.brand} ${d.model}`, `
+    <div class="space-y-4">
+      <div class="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-sm text-blue-700 dark:text-blue-300">
+        <span class="font-medium">Serial:</span> ${d.serial} &nbsp;·&nbsp; <span class="font-medium">Tipo:</span> ${d.type}
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Colaborador *</label>
+        <select id="m-colab" class="${inputCls()}"><option value="">Seleccionar colaborador…</option>${colOpts}</select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha de inicio</label>
+        <input id="m-start" type="date" value="${today()}" class="${inputCls()}">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notas</label>
+        <textarea id="m-notas" rows="2" placeholder="Ej: Equipo de trabajo principal…" class="${inputCls()} resize-none"></textarea>
+      </div>
+      ${modalBtns(`submitAssignDevice('${devId}')`, 'Confirmar asignación', 'bg-blue-600 hover:bg-blue-700')}
+    </div>`);
+}
+
+function submitAssignDevice(devId) {
+  const colabId = document.getElementById('m-colab').value;
+  if (!colabId) { alert('Selecciona un colaborador.'); return; }
+  _doAssign(devId, colabId,
+    document.getElementById('m-start').value || today(),
+    document.getElementById('m-notas').value.trim());
+  closeModal(); renderPage();
+}
+
+function _doAssign(devId, colabId, fechaInicio, notas) {
+  const dev = getDevice(devId);
+  dev.status = 'en_uso';
+  historial.push({ id:uid('h'), deviceId:devId, colaboradorId:colabId,
+    fechaInicio, fechaTermino:null, motivoTermino:null, notas, registradoPor:currentUser.name });
+}
+
+function openUnassignDevice(devId) {
+  const d = getDevice(devId);
+  const activeH = historial.find(h=>h.deviceId===devId && !h.fechaTermino);
+  if (!activeH) { alert('No se encontró asignación activa.'); return; }
+  const col = getColab(activeH.colaboradorId);
+  const stOpts = [['disponible','Disponible'],['mantencion','En mantención'],['baja','Dado de baja']]
+    .map(([v,l])=>`<option value="${v}">${l}</option>`).join('');
+  modal(`Desasignar · ${d?d.brand+' '+d.model:devId}`, `
+    <div class="space-y-4">
+      <div class="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg text-sm text-orange-700 dark:text-orange-300">
+        Actualmente asignado a <strong>${col?col.nombre+' '+col.apellido:'—'}</strong> desde ${activeH.fechaInicio}
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha de devolución</label>
+        <input id="m-end" type="date" value="${today()}" class="${inputCls()}">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nuevo estado del equipo</label>
+        <select id="m-newstatus" class="${inputCls()}">${stOpts}</select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Motivo de término *</label>
+        <input id="m-motivo" type="text" placeholder="Ej: Cambio de equipo, desvinculación…" class="${inputCls()}">
+      </div>
+      ${modalBtns(`submitUnassign('${activeH.id}')`, 'Confirmar devolución', 'bg-orange-600 hover:bg-orange-700')}
+    </div>`);
+}
+
+function submitUnassign(histId) {
+  const motivo = document.getElementById('m-motivo').value.trim();
+  if (!motivo) { alert('Indica el motivo de la devolución.'); return; }
+  const h = historial.find(x=>x.id===histId);
+  h.fechaTermino = document.getElementById('m-end').value || today();
+  h.motivoTermino = motivo;
+  getDevice(h.deviceId).status = document.getElementById('m-newstatus').value;
+  closeModal(); renderPage();
+}
+
+// ─── PAGE: ASIGNACIONES ───────────────────────────────────────────────────
+
+function asignacionesHTML() {
+  const active = historial.filter(h=>!h.fechaTermino);
+  const available = devices.filter(d=>d.status==='disponible');
+
+  return `<div class="p-6">
+    <div class="max-w-7xl mx-auto">
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h1 class="text-2xl font-bold">Asignaciones</h1>
+          <p class="text-sm text-gray-500 dark:text-gray-400">${active.length} activas · ${available.length} equipos disponibles</p>
+        </div>
+        <button onclick="openNewAssignment()" class="flex items-center px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 gap-1.5">
+          <i data-lucide="plus" class="w-4 h-4"></i>Nueva asignación
+        </button>
+      </div>
+
+      <!-- Active table -->
+      <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden mb-6">
+        <div class="px-5 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
+          <i data-lucide="link" class="w-4 h-4 text-blue-500"></i>
+          <h3 class="font-semibold text-sm">Asignaciones activas</h3>
+          <span class="ml-1 px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs rounded-full">${active.length}</span>
+        </div>
+        ${active.length === 0
+          ? `<div class="text-center py-14 text-gray-500 dark:text-gray-400">
+              <i data-lucide="inbox" class="w-10 h-10 mx-auto mb-3 opacity-40"></i>
+              <p class="font-medium">Sin asignaciones activas</p>
+             </div>`
+          : `<div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead class="bg-gray-50 dark:bg-gray-700/50">
+                  <tr>
+                    <th class="text-left px-4 py-3 font-medium text-gray-500 dark:text-gray-400 text-xs">Colaborador</th>
+                    <th class="text-left px-4 py-3 font-medium text-gray-500 dark:text-gray-400 text-xs">Dispositivo</th>
+                    <th class="text-left px-4 py-3 font-medium text-gray-500 dark:text-gray-400 text-xs">Tipo</th>
+                    <th class="text-left px-4 py-3 font-medium text-gray-500 dark:text-gray-400 text-xs">Desde</th>
+                    <th class="text-left px-4 py-3 font-medium text-gray-500 dark:text-gray-400 text-xs">Días</th>
+                    <th class="text-left px-4 py-3 font-medium text-gray-500 dark:text-gray-400 text-xs">Notas</th>
+                    <th class="px-4 py-3"></th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                  ${active.map(h => {
+                    const col = getColab(h.colaboradorId);
+                    const dev = getDevice(h.deviceId);
+                    const days = daysBetween(h.fechaInicio);
+                    return `<tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30">
+                      <td class="px-4 py-3">
+                        <div class="flex items-center gap-2.5">
+                          ${avatarDiv(col?col.nombre+' '+col.apellido:'?','w-7 h-7','text-xs')}
+                          <div>
+                            <p class="font-medium">${col?col.nombre+' '+col.apellido:'—'}</p>
+                            <p class="text-xs text-gray-400">${col?col.departamento:''}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="px-4 py-3">
+                        <p class="font-medium">${dev?dev.brand+' '+dev.model:'—'}</p>
+                        <p class="text-xs font-mono text-gray-400">${dev?dev.serial:''}</p>
+                      </td>
+                      <td class="px-4 py-3 text-gray-600 dark:text-gray-400">${dev?dev.type:'—'}</td>
+                      <td class="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs">${h.fechaInicio}</td>
+                      <td class="px-4 py-3">
+                        <span class="px-2 py-0.5 text-xs rounded-full ${days>365?'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300':'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'}">${days}d</span>
+                      </td>
+                      <td class="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 max-w-48 truncate">${h.notas||'—'}</td>
+                      <td class="px-4 py-3">
+                        <button onclick="openUnassignDevice('${h.deviceId}')" class="flex items-center gap-1 px-3 py-1.5 text-xs text-orange-600 dark:text-orange-400 border border-orange-300 dark:border-orange-700 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-900/20">
+                          <i data-lucide="link-2-off" class="w-3 h-3"></i>Desasignar
+                        </button>
+                      </td>
+                    </tr>`;
+                  }).join('')}
+                </tbody>
+              </table>
+             </div>`}
+      </div>
+
+      <!-- Available devices -->
+      <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
+        <h3 class="font-semibold flex items-center gap-2 mb-4 text-sm">
+          <i data-lucide="check-circle" class="w-4 h-4 text-green-500"></i>Equipos disponibles
+          <span class="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs rounded-full font-normal">${available.length}</span>
+        </h3>
+        ${available.length === 0
+          ? '<p class="text-sm text-gray-400 text-center py-6">No hay equipos disponibles en este momento.</p>'
+          : `<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              ${available.map(d=>`
+                <div class="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-blue-300 dark:hover:border-blue-600 transition-colors">
+                  <div>
+                    <p class="text-sm font-medium">${d.brand} ${d.model}</p>
+                    <p class="text-xs text-gray-400">${d.type} · ${d.serial}</p>
+                  </div>
+                  <button onclick="openAssignDevice('${d.id}')" class="px-3 py-1.5 text-xs text-blue-600 dark:text-blue-400 border border-blue-300 dark:border-blue-700 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 shrink-0">Asignar</button>
+                </div>`).join('')}
+             </div>`}
+      </div>
+    </div>
+  </div>`;
+}
+
+function afterAsignaciones() {}
+
+function openNewAssignment() {
+  const available = devices.filter(d=>d.status==='disponible');
+  if (available.length === 0) { alert('No hay dispositivos disponibles para asignar.'); return; }
+  const devOpts = available.map(d=>`<option value="${d.id}">${d.brand} ${d.model} (${d.serial})</option>`).join('');
+  const colOpts = colaboradores.map(c=>`<option value="${c.id}">${c.nombre} ${c.apellido} · ${c.departamento}</option>`).join('');
+  modal('Nueva asignación', `
+    <div class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Dispositivo disponible *</label>
+        <select id="m-device" class="${inputCls()}"><option value="">Seleccionar dispositivo…</option>${devOpts}</select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Colaborador *</label>
+        <select id="m-colab" class="${inputCls()}"><option value="">Seleccionar colaborador…</option>${colOpts}</select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha de inicio</label>
+        <input id="m-start" type="date" value="${today()}" class="${inputCls()}">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notas</label>
+        <textarea id="m-notas" rows="2" placeholder="Ej: Asignación para trabajo remoto…" class="${inputCls()} resize-none"></textarea>
+      </div>
+      ${modalBtns('submitNewAssignment()', 'Confirmar asignación', 'bg-blue-600 hover:bg-blue-700')}
+    </div>`);
+}
+
+function submitNewAssignment() {
+  const devId   = document.getElementById('m-device').value;
+  const colabId = document.getElementById('m-colab').value;
+  if (!devId || !colabId) { alert('Selecciona un dispositivo y un colaborador.'); return; }
+  _doAssign(devId, colabId,
+    document.getElementById('m-start').value || today(),
+    document.getElementById('m-notas').value.trim());
+  closeModal(); renderPage();
+}
+
+// ─── PAGE: HISTORIAL ──────────────────────────────────────────────────────
+
+function historialHTML() {
+  let list = [...historial].sort((a,b) => {
+    const da = a.fechaTermino || a.fechaInicio;
+    const db = b.fechaTermino || b.fechaInicio;
+    return db.localeCompare(da);
+  });
+
+  if (S.histDeviceQ) {
+    const q = S.histDeviceQ.toLowerCase();
+    list = list.filter(h => { const d=getDevice(h.deviceId); return d&&(d.brand+' '+d.model+' '+d.serial).toLowerCase().includes(q); });
+  }
+  if (S.histColabQ) {
+    const q = S.histColabQ.toLowerCase();
+    list = list.filter(h => { const c=getColab(h.colaboradorId); return c&&(c.nombre+' '+c.apellido).toLowerCase().includes(q); });
+  }
+
+  return `<div class="p-6">
+    <div class="max-w-7xl mx-auto">
+      <div class="mb-6">
+        <h1 class="text-2xl font-bold">Historial de asignaciones</h1>
+        <p class="text-sm text-gray-500 dark:text-gray-400">${historial.length} registros inmutables</p>
+      </div>
+
+      <div class="flex flex-wrap gap-3 mb-4">
+        <div class="relative flex-1 min-w-56">
+          <i data-lucide="monitor" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"></i>
+          <input id="hist-dev-q" type="text" placeholder="Filtrar por dispositivo…" value="${S.histDeviceQ}"
+            class="w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div class="relative flex-1 min-w-56">
+          <i data-lucide="user" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"></i>
+          <input id="hist-col-q" type="text" placeholder="Filtrar por colaborador…" value="${S.histColabQ}"
+            class="w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+      </div>
+
+      <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
+              <tr>
+                <th class="text-left px-4 py-3 font-medium text-gray-500 dark:text-gray-400 text-xs">Dispositivo</th>
+                <th class="text-left px-4 py-3 font-medium text-gray-500 dark:text-gray-400 text-xs">Colaborador</th>
+                <th class="text-left px-4 py-3 font-medium text-gray-500 dark:text-gray-400 text-xs">Inicio</th>
+                <th class="text-left px-4 py-3 font-medium text-gray-500 dark:text-gray-400 text-xs">Término</th>
+                <th class="text-left px-4 py-3 font-medium text-gray-500 dark:text-gray-400 text-xs">Estado</th>
+                <th class="text-left px-4 py-3 font-medium text-gray-500 dark:text-gray-400 text-xs">Motivo</th>
+                <th class="text-left px-4 py-3 font-medium text-gray-500 dark:text-gray-400 text-xs">Registrado por</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+              ${list.length === 0
+                ? `<tr><td colspan="7" class="px-4 py-16 text-center text-gray-500 dark:text-gray-400">
+                    <i data-lucide="search-x" class="w-10 h-10 mx-auto mb-3 opacity-30"></i>
+                    <p class="font-medium">Sin resultados</p>
+                   </td></tr>`
+                : list.map(h => {
+                  const dev = getDevice(h.deviceId);
+                  const col = getColab(h.colaboradorId);
+                  const act = !h.fechaTermino;
+                  return `<tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30">
+                    <td class="px-4 py-3">
+                      <p class="font-medium">${dev?dev.brand+' '+dev.model:'—'}</p>
+                      <p class="text-xs font-mono text-gray-400">${dev?dev.serial:''}</p>
+                    </td>
+                    <td class="px-4 py-3">
+                      <div class="flex items-center gap-2">
+                        ${avatarDiv(col?col.nombre+' '+col.apellido:'?','w-6 h-6','text-xs')}
+                        <div>
+                          <p>${col?col.nombre+' '+col.apellido:'—'}</p>
+                          <p class="text-xs text-gray-400">${col?col.departamento:''}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs">${h.fechaInicio}</td>
+                    <td class="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs">${h.fechaTermino||'—'}</td>
+                    <td class="px-4 py-3">
+                      ${act
+                        ? '<span class="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">Activo</span>'
+                        : '<span class="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">Cerrado</span>'}
+                    </td>
+                    <td class="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 max-w-48 truncate">${h.motivoTermino||(act?'Asignación vigente':'—')}</td>
+                    <td class="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">${h.registradoPor}</td>
+                  </tr>`;
+                }).join('')}
+            </tbody>
+          </table>
+        </div>
+        <div class="px-4 py-3 border-t border-gray-100 dark:border-gray-700 text-xs text-gray-400 flex items-center gap-2">
+          <i data-lucide="lock" class="w-3 h-3"></i>
+          Mostrando ${list.length} de ${historial.length} registros · El historial no puede ser modificado
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function afterHistorial() {
+  const dEl = document.getElementById('hist-dev-q');
+  const cEl = document.getElementById('hist-col-q');
+  if (dEl) {
+    if (S.histDeviceQ) { dEl.focus(); dEl.setSelectionRange(dEl.value.length, dEl.value.length); }
+    dEl.addEventListener('input', e => { S.histDeviceQ = e.target.value; renderPage(); });
+  }
+  if (cEl) {
+    if (S.histColabQ && !S.histDeviceQ) { cEl.focus(); cEl.setSelectionRange(cEl.value.length, cEl.value.length); }
+    cEl.addEventListener('input', e => { S.histColabQ = e.target.value; renderPage(); });
+  }
+}
+
+// ─── PAGE: COLABORADORES ──────────────────────────────────────────────────
+
+function colaboradoresHTML() {
+  const list = colaboradores.filter(c => {
+    const q = S.colaboradorQ.toLowerCase();
+    return !q || (c.nombre+' '+c.apellido+' '+c.email+' '+c.departamento+' '+c.cargo).toLowerCase().includes(q);
+  });
+
+  return `<div class="p-6">
+    <div class="max-w-6xl mx-auto">
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h1 class="text-2xl font-bold">Colaboradores</h1>
+          <p class="text-sm text-gray-500 dark:text-gray-400">${colaboradores.length} colaboradores registrados</p>
+        </div>
+        <button onclick="openAddColab()" class="flex items-center px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 gap-1.5">
+          <i data-lucide="user-plus" class="w-4 h-4"></i>Nuevo colaborador
+        </button>
+      </div>
+
+      <div class="relative mb-5">
+        <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"></i>
+        <input id="colab-search" type="text" placeholder="Buscar por nombre, cargo, área…" value="${S.colaboradorQ}"
+          class="w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 max-w-md">
+      </div>
+
+      ${list.length === 0
+        ? `<div class="text-center py-16 text-gray-500 dark:text-gray-400">
+            <i data-lucide="users" class="w-12 h-12 mx-auto mb-4 opacity-30"></i>
+            <p class="font-medium">Sin resultados</p>
+           </div>`
+        : `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            ${list.map(c => {
+              const activeDev = historial.filter(h=>h.colaboradorId===c.id&&!h.fechaTermino);
+              return `<div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5">
+                <div class="flex items-start gap-3 mb-3">
+                  ${avatarDiv(c.nombre+' '+c.apellido,'w-11 h-11','text-sm')}
+                  <div class="flex-1 min-w-0">
+                    <p class="font-semibold truncate">${c.nombre} ${c.apellido}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 truncate">${c.cargo}</p>
+                    <span class="inline-block mt-1 px-2 py-0.5 text-xs rounded-full bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300">${c.departamento}</span>
+                  </div>
+                </div>
+                <div class="space-y-1 mb-3">
+                  <p class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+                    <i data-lucide="mail" class="w-3 h-3 shrink-0"></i><span class="truncate">${c.email}</span>
+                  </p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+                    <i data-lucide="monitor" class="w-3 h-3 shrink-0"></i>${activeDev.length} equipo${activeDev.length!==1?'s':''} asignado${activeDev.length!==1?'s':''}
+                  </p>
+                </div>
+                <div class="flex gap-2">
+                  <button onclick="openColabDetail('${c.id}')" class="flex-1 flex items-center justify-center gap-1 px-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <i data-lucide="eye" class="w-3 h-3"></i>Ver detalle
+                  </button>
+                  <button onclick="openEditColab('${c.id}')" class="px-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700" title="Editar">
+                    <i data-lucide="pencil" class="w-3 h-3"></i>
+                  </button>
+                </div>
+              </div>`;
+            }).join('')}
+           </div>`}
+    </div>
+  </div>`;
+}
+
+function afterColaboradores() {
+  const el = document.getElementById('colab-search');
+  if (el) {
+    if (S.colaboradorQ) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
+    el.addEventListener('input', e => { S.colaboradorQ = e.target.value; renderPage(); });
+  }
+}
+
+function colabFormHTML(c={}) {
+  const dOpts = DEPARTMENTS.map(d=>`<option value="${d}" ${c.departamento===d?'selected':''}>${d}</option>`).join('');
+  return `<div class="grid grid-cols-2 gap-4">
+    <div>
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre *</label>
+      <input id="m-nombre" type="text" value="${c.nombre||''}" class="${inputCls()}">
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Apellido *</label>
+      <input id="m-apellido" type="text" value="${c.apellido||''}" class="${inputCls()}">
+    </div>
+    <div class="col-span-2">
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email corporativo *</label>
+      <input id="m-email" type="email" value="${c.email||''}" placeholder="nombre.apellido@empresa.com" class="${inputCls()}">
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Departamento</label>
+      <select id="m-dept" class="${inputCls()}"><option value="">Seleccionar…</option>${dOpts}</select>
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cargo</label>
+      <input id="m-cargo" type="text" value="${c.cargo||''}" placeholder="Ej: Analista TI" class="${inputCls()}">
+    </div>
+  </div>`;
+}
+
+function openAddColab() {
+  modal('Nuevo colaborador', `<div class="space-y-4">${colabFormHTML()}${modalBtns('saveNewColab()','Registrar')}</div>`, true);
+}
+
+function saveNewColab() {
+  const nombre   = document.getElementById('m-nombre').value.trim();
+  const apellido = document.getElementById('m-apellido').value.trim();
+  const email    = document.getElementById('m-email').value.trim();
+  if (!nombre||!apellido||!email) { alert('Completa los campos obligatorios (*)'); return; }
+  colaboradores.push({ id:uid('col'), nombre, apellido, email,
+    departamento: document.getElementById('m-dept').value || 'TI',
+    cargo: document.getElementById('m-cargo').value.trim() });
+  closeModal(); renderPage();
+}
+
+function openEditColab(colId) {
+  const c = getColab(colId); if (!c) return;
+  modal(`Editar · ${c.nombre} ${c.apellido}`, `<div class="space-y-4">${colabFormHTML(c)}${modalBtns(`saveEditColab('${colId}')`)}</div>`, true);
+}
+
+function saveEditColab(colId) {
+  const c = getColab(colId); if (!c) return;
+  const nombre   = document.getElementById('m-nombre').value.trim();
+  const apellido = document.getElementById('m-apellido').value.trim();
+  const email    = document.getElementById('m-email').value.trim();
+  if (!nombre||!apellido||!email) { alert('Completa los campos obligatorios (*)'); return; }
+  Object.assign(c, { nombre, apellido, email,
+    departamento: document.getElementById('m-dept').value,
+    cargo: document.getElementById('m-cargo').value.trim() });
+  closeModal(); renderPage();
+}
+
+function openColabDetail(colId) {
+  const c = getColab(colId); if (!c) return;
+  const active = historial.filter(h=>h.colaboradorId===colId&&!h.fechaTermino);
+  const past   = historial.filter(h=>h.colaboradorId===colId&&h.fechaTermino)
+                          .sort((a,b)=>b.fechaTermino.localeCompare(a.fechaTermino));
+  modal(`${c.nombre} ${c.apellido}`, `
+    <div class="space-y-4">
+      <div class="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+        ${avatarDiv(c.nombre+' '+c.apellido,'w-12 h-12','text-base')}
+        <div>
+          <p class="font-semibold">${c.nombre} ${c.apellido}</p>
+          <p class="text-sm text-gray-500">${c.cargo}</p>
+          <span class="inline-block mt-1 px-2 py-0.5 text-xs rounded-full bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300">${c.departamento}</span>
+        </div>
+      </div>
+      <div>
+        <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Equipos asignados actualmente (${active.length})</p>
+        ${active.length===0
+          ? '<p class="text-sm text-gray-400 italic">Sin equipos asignados</p>'
+          : active.map(h => {
+            const d = getDevice(h.deviceId);
+            return `<div class="flex items-center gap-2.5 mb-2 p-2.5 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+              <i data-lucide="monitor" class="w-4 h-4 text-blue-500 shrink-0"></i>
+              <div>
+                <p class="text-sm font-medium">${d?d.brand+' '+d.model:'—'}</p>
+                <p class="text-xs text-gray-500">Serial: ${d?d.serial:''} · Desde: ${h.fechaInicio}</p>
+              </div>
+            </div>`;
+          }).join('')}
+      </div>
+      ${past.length > 0 ? `
+      <div>
+        <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Historial anterior (${past.length})</p>
+        ${past.map(h => {
+          const d = getDevice(h.deviceId);
+          return `<div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mb-1.5">
+            <i data-lucide="clock" class="w-3 h-3 shrink-0"></i>
+            ${d?d.brand+' '+d.model:'—'} &nbsp;·&nbsp; ${h.fechaInicio} → ${h.fechaTermino}
+          </div>`;
+        }).join('')}
+      </div>` : ''}
+      <div class="flex justify-end pt-1">
+        <button onclick="closeModal()" class="px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">Cerrar</button>
+      </div>
+    </div>`);
+}
+
+// ─── PAGE: CATÁLOGOS ──────────────────────────────────────────────────────
+
+function catalogosHTML() {
+  const tab = S.catalogTab;
+  const tabs = [
+    { id:'marcas',        label:'Marcas',             count:catalogBrands.length,  icon:'tag' },
+    { id:'tipos',         label:'Tipos de dispositivo',count:catalogTypes.length,  icon:'cpu' },
+    { id:'departamentos', label:'Departamentos',       count:DEPARTMENTS.length,    icon:'building-2' },
+  ];
+
+  return `<div class="p-6">
+    <div class="max-w-4xl mx-auto">
+      <div class="mb-6">
+        <h1 class="text-2xl font-bold">Catálogos</h1>
+        <p class="text-sm text-gray-500 dark:text-gray-400">Administra las listas de referencia del sistema</p>
+      </div>
+
+      <div class="flex border-b border-gray-200 dark:border-gray-700 mb-6 gap-1">
+        ${tabs.map(t=>`
+          <button onclick="S.catalogTab='${t.id}'; renderPage()" class="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${tab===t.id
+            ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+            : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}">
+            <i data-lucide="${t.icon}" class="w-3.5 h-3.5"></i>${t.label}
+            <span class="text-xs font-normal text-gray-400 ml-0.5">(${t.count})</span>
+          </button>`).join('')}
+      </div>
+
+      ${tab==='marcas' ? catalogSectionHTML('marcas', catalogBrands, 'tag', true) : ''}
+      ${tab==='tipos' ? catalogSectionHTML('tipos', catalogTypes, 'cpu', true) : ''}
+      ${tab==='departamentos' ? catalogSectionHTML('departamentos', DEPARTMENTS, 'building-2', false) : ''}
+    </div>
+  </div>`;
+}
+
+function catalogSectionHTML(type, items, icon, editable) {
+  const labels = { marcas:'Marcas', tipos:'Tipos de dispositivo', departamentos:'Departamentos' };
+  return `<div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
+    <div class="flex items-center justify-between mb-5">
+      <h3 class="font-semibold flex items-center gap-2">
+        <i data-lucide="${icon}" class="w-4 h-4 text-gray-400"></i>${labels[type]}
+      </h3>
+      ${editable ? `<button onclick="openAddCatalog('${type}')" class="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+        <i data-lucide="plus" class="w-3.5 h-3.5"></i>Añadir
+      </button>` : '<span class="text-xs text-gray-400">Solo lectura</span>'}
+    </div>
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+      ${items.map((item, idx) => `
+        <div class="group flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+          <div class="flex items-center gap-2 min-w-0">
+            <i data-lucide="${icon}" class="w-3.5 h-3.5 text-gray-400 shrink-0"></i>
+            <span class="text-sm truncate">${item}</span>
+          </div>
+          ${editable ? `<button onclick="deleteCatalogItem('${type}',${idx})" class="opacity-0 group-hover:opacity-100 p-1 text-red-400 hover:text-red-600 rounded shrink-0 transition-opacity" title="Eliminar">
+            <i data-lucide="x" class="w-3 h-3"></i>
+          </button>` : ''}
+        </div>`).join('')}
+    </div>
+    ${editable ? `<p class="text-xs text-gray-400 mt-4">Los elementos en uso por dispositivos existentes permanecerán en el inventario al eliminarse del catálogo.</p>` : ''}
+  </div>`;
+}
+
+function afterCatalogos() {}
+
+function openAddCatalog(type) {
+  const label = type==='marcas' ? 'marca' : 'tipo de dispositivo';
+  const placeholder = type==='marcas' ? 'Ej: Acer' : 'Ej: Switch de red';
+  modal(`Añadir ${label}`, `
+    <div class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre *</label>
+        <input id="m-cat-name" type="text" placeholder="${placeholder}" class="${inputCls()}">
+      </div>
+      ${modalBtns(`saveCatalogItem('${type}')`, 'Añadir', 'bg-blue-600 hover:bg-blue-700')}
+    </div>`);
+  setTimeout(()=>{ const el=document.getElementById('m-cat-name'); if(el) el.focus(); }, 50);
+}
+
+function saveCatalogItem(type) {
+  const name = document.getElementById('m-cat-name').value.trim();
+  if (!name) { alert('Ingresa un nombre.'); return; }
+  if (type==='marcas') {
+    if (catalogBrands.includes(name)) { alert('La marca ya existe.'); return; }
+    catalogBrands.push(name); catalogBrands.sort();
+  } else {
+    if (catalogTypes.includes(name)) { alert('El tipo ya existe.'); return; }
+    catalogTypes.push(name); catalogTypes.sort();
+  }
+  closeModal(); renderPage();
+}
+
+function deleteCatalogItem(type, idx) {
+  if (!confirm('¿Eliminar este elemento del catálogo?')) return;
+  if (type==='marcas') catalogBrands.splice(idx,1);
+  else catalogTypes.splice(idx,1);
+  renderPage();
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderSidebar();
+  renderHeader();
+  renderPage();
+
+  document.getElementById('btn-theme').addEventListener('click', toggleTheme);
+  document.getElementById('btn-notif').addEventListener('click', e => toggleDrop(e,'drop-notif'));
+  document.getElementById('btn-user').addEventListener('click', e => toggleDrop(e,'drop-user'));
+  document.getElementById('btn-notif-read').addEventListener('click', e => {
+    e.stopPropagation();
+    notifications.forEach(n => n.unread = false);
+    renderNotifications();
+  });
+  document.getElementById('modal-bg').addEventListener('click', e => { if (e.target===e.currentTarget) closeModal(); });
+  document.addEventListener('click', closeDrops);
+  document.getElementById('sidebar-nav').addEventListener('click', e => {
+    const btn = e.target.closest('[data-nav]');
+    if (btn) go(btn.getAttribute('data-nav'));
+  });
+});
+</script>
+</body>
+</html>
